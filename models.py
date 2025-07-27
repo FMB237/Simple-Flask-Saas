@@ -8,13 +8,14 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
 
-    # Table: users (with role)
+    # Table: users (with role and last_login)
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT DEFAULT 'user'
+            role TEXT DEFAULT 'user',
+            last_login DATETIME
         )
     ''')
 
@@ -28,10 +29,15 @@ def init_db():
         )
     ''')
 
+    # Add last_login column if it does not exist (for existing DBs)
+    c.execute("PRAGMA table_info(users)")
+    columns = [row[1] for row in c.fetchall()]
+    if 'last_login' not in columns:
+        c.execute("ALTER TABLE users ADD COLUMN last_login DATETIME")
+
     conn.commit()
     conn.close()
-
-# ----------------------------
+        # ----------------------------
 # USER OPERATIONS
 # ----------------------------
 
@@ -42,6 +48,7 @@ def get_user(username):
     user = c.fetchone()
     conn.close()
     return user
+
 
 def get_user_by_id(user_id):
     conn = sqlite3.connect(DB_NAME)
@@ -58,10 +65,13 @@ def create_user(username, password_hash, role='user'):
     conn.commit()
     conn.close()
 
-# ----------------------------
-# FILE OPERATIONS
-# ----------------------------
-
+def update_last_login(username):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE username = ?', (username,))
+    conn.commit()
+    conn.close()
+    
 def add_file(user_id, filename):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()

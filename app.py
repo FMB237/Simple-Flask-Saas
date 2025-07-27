@@ -1,8 +1,7 @@
 from flask import Flask, render_template, redirect, request, url_for, flash, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import init_db, get_user, get_user_by_id, create_user
-from models import get_all_users
+from models import init_db, get_user, get_user_by_id, create_user, get_all_users, update_last_login, update_password
 
 from services.uploads import upload_bp  # if you modularized uploads
 
@@ -70,7 +69,7 @@ def login():
         password = request.form['password']
         user = get_user(username)
         if user and check_password_hash(user[2], password):
-            user_obj = User(user[0], user[1], user[3])  # ID, username, role
+            user_obj = User(user[0], user[1], user[2], user[3])  # ID, username, password, role
             login_user(user_obj)
             update_last_login(username)  # <== Track login time here
             return redirect('/')
@@ -137,5 +136,3 @@ app.register_blueprint(upload_bp)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5002)
-
-
